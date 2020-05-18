@@ -29,4 +29,4 @@ The following are future objectives. If you happen to feel like tackling any of 
 * dump current state (possibly to image formats)
 * imitate rollover functionality for right and left
 * pre-program some neat seeds/common constructs
-* allow loading in states (possible from image formats)
+* allow loading in states (possibly from image formats)
