@@ -13,10 +13,16 @@
 #include <curses.h>
 #include <unistd.h>
 
+// convenience functions
 void printWorld(int WIDTH, int HEIGHT, char map[WIDTH][HEIGHT]);
 void iterGen(int WIDTH, int HEIGHT, char curMap[WIDTH][HEIGHT]);
 int liveCheck(int WIDTH, int HEIGHT, char map[WIDTH][HEIGHT]);
+void cleanup(void);
+
+// user commands
 void genRandom(int WIDTH, int HEIGHT, char map[WIDTH][HEIGHT]);
+int dumpMap(int WIDTH, int HEIGHT, char map[WIDTH][HEIGHT]);
+void pauseSim(int WIDTH, int HEIGHT, char map[WIDTH][HEIGHT]);
 
 int main(void)
 {
@@ -27,10 +33,14 @@ int main(void)
     // start curses
     initscr();
     cbreak();
+    nodelay(stdscr, TRUE);
     noecho();
     keypad(stdscr, TRUE);
 
     clear();
+
+    // setup for leaving curses
+    atexit(cleanup);
 
     // setup worldmap
     WIDTH = COLS - 1;
@@ -86,24 +96,39 @@ int main(void)
     }
     clear();
 
-    mvaddstr(HEIGHT, 0, "Press 'ctrl+c' to end simulation");
-    mvaddstr(HEIGHT, 34, "Generation 0");
+    mvaddstr(HEIGHT, 0, "Press 'e' to end simulation, space to pause");
+    mvaddstr(HEIGHT, 45, "Generation 0");
     printWorld(WIDTH, HEIGHT, map);
 
     int generation = 1;
     while (liveCheck(WIDTH, HEIGHT, map))
     {
         usleep(100000);
+        if ((ch = getch()) != ERR)
+        {
+            switch (ch) {
+                case 'e':
+                    exit(0);
+                    break;
+
+                case ' ':
+                    //TODO: instructions
+                    pauseSim(WIDTH, HEIGHT, map);
+                    break;
+
+                case 'r':
+                    //TODO: reset
+                    break;
+            }
+        }
 
         iterGen(WIDTH, HEIGHT, map);
-        mvprintw(HEIGHT, 45, "%d", generation);
+        mvprintw(HEIGHT, 56, "%d", generation);
         // x coordinate comes from other string, but we don't want to have to
         // import string.h just for strlen()
         printWorld(WIDTH, HEIGHT, map);
         generation++;
     }
-
-    endwin();
 
     exit(0);
 }
@@ -178,6 +203,15 @@ int liveCheck(int WIDTH, int HEIGHT, char map[WIDTH][HEIGHT])
     return 0;
 }
 
+/* return the terminal to normal functionality */
+void cleanup(void)
+{
+    nodelay(stdscr, TRUE);
+    echo();
+    nocbreak();
+    endwin();
+}
+
 /* create a random starting generation */
 void genRandom(int WIDTH, int HEIGHT, char map[WIDTH][HEIGHT])
 {
@@ -192,4 +226,52 @@ void genRandom(int WIDTH, int HEIGHT, char map[WIDTH][HEIGHT])
     }
 
     printWorld(WIDTH, HEIGHT, map);
+}
+
+/* enter a pause state */
+void pauseSim(int WIDTH, int HEIGHT, char map[WIDTH][HEIGHT])
+{
+    int ch;
+
+    while ((ch = getchar()) != ' ')
+    {
+        switch (ch)
+        {
+            case 'd':
+                dumpMap(WIDTH, HEIGHT, map);
+                break;
+
+            case 'e':
+                exit(0);
+                break;
+
+            case 'r':
+                //TODO: reset
+                break;
+        }
+    }
+}
+
+/* dump current generation to a text file */
+int dumpMap(int WIDTH, int HEIGHT, char map[WIDTH][HEIGHT])
+{
+    int i, j;
+    FILE *dumpFile = fopen("dump.txt", "w");
+    if (dumpFile == NULL)
+    {
+        fprintf(stderr, "Unable to create dump file.\n");
+        return 1;
+    }
+
+    for (i = 0; i < HEIGHT; i++)
+    {
+        for (j = 0; j < WIDTH; j++)
+        {
+            fputc(map[j][i], dumpFile);
+        }
+        fputc('\n', dumpFile);
+    }
+
+    fclose(dumpFile);
+    return 0;
 }
