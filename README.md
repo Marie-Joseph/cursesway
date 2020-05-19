@@ -41,3 +41,4 @@ The following are future objectives. If you happen to feel like tackling any of 
     * dumpfile format
     * premade seeds
     * "alive" cell character
+* clean up the implementation and ideally use pure C99
