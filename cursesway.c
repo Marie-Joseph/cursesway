@@ -13,20 +13,19 @@
 #include <curses.h>
 
 /* Convenience functions */
-void printWorld(int WIDTH, int HEIGHT, char map[WIDTH][HEIGHT]);
-void iterGen(int WIDTH, int HEIGHT, char curMap[WIDTH][HEIGHT]);
-int liveCheck(int WIDTH, int HEIGHT, char map[WIDTH][HEIGHT]);
+void printWorld(int HEIGHT, int WIDTH, char map[HEIGHT][WIDTH]);
+void iterGen(int HEIGHT, int WIDTH, char curMap[HEIGHT][WIDTH]);
+int liveCheck(int HEIGHT, int WIDTH, char map[HEIGHT][WIDTH]);
 void cleanup(void);
-/*TODO:void nanosleep(unsigned long int nsecs);*/
 
 /* User commands */
-void genRandom(int WIDTH, int HEIGHT, char map[WIDTH][HEIGHT]);
-int dumpMap(int WIDTH, int HEIGHT, char map[WIDTH][HEIGHT]);
-void pauseSim(int WIDTH, int HEIGHT, char map[WIDTH][HEIGHT]);
+void genRandom(int HEIGHT, int WIDTH, char map[HEIGHT][WIDTH]);
+int dumpMap(int HEIGHT, int WIDTH, char map[HEIGHT][WIDTH]);
+void pauseSim(int HEIGHT, int WIDTH, char map[HEIGHT][WIDTH]);
 
 int main(int argv, char **argc)
 {
-    unsigned int ch, i, j, curs_x, curs_y, generation, WIDTH, HEIGHT;
+    unsigned int ch, i, j, curs_x, curs_y, generation;
     /*unsigned int gen_time, rand_seed;*/
     struct timespec wait_time;
 
@@ -38,8 +37,8 @@ int main(int argv, char **argc)
     /* Start curses */
     initscr();
     cbreak();
-    nodelay(stdscr, TRUE);
     noecho();
+    nodelay(stdscr, TRUE);
     keypad(stdscr, TRUE);
 
     clear();
@@ -48,34 +47,34 @@ int main(int argv, char **argc)
     atexit(cleanup);
 
     /* Setup worldmap */
-    WIDTH = COLS - 1;
-    HEIGHT = LINES - 1;
-    char map[WIDTH][HEIGHT];
-    for (i = 0; i < WIDTH; i++)
+    register const unsigned int HEIGHT = LINES - 1;
+    register const unsigned int WIDTH = COLS - 1;
+    char map[HEIGHT][WIDTH];
+    for (i = 0; i < HEIGHT; i++)
     {
-        for (j = 0; j < HEIGHT; j++)
+        for (j = 0; j < WIDTH; j++)
         {
             map[i][j] = ' ';
         }
     }
     mvaddstr(HEIGHT, 0, "Press 'r' to create a random generation and 'space' to start the simulation; alternatively, navigate with WASD and give 'life' to a cell (or remove it) with 'l'");
-    printWorld(WIDTH, HEIGHT, map);
+    printWorld(HEIGHT, WIDTH, map);
 
     /* Get user input on creating a map or generating a random one */
-    curs_x = 0;
     curs_y = 0;
+    curs_x = 0;
     move(curs_y, curs_x);
     while ((ch = getchar()) != ' ')
     {
         switch (ch)
         {
             case 'r':
-                genRandom(WIDTH, HEIGHT, map);
+                genRandom(HEIGHT, WIDTH, map);
                 break;
 
             case 'l':
-                map[curs_x][curs_y] = map[curs_x][curs_y] == '*' ? ' ' : '*';
-                printWorld(WIDTH, HEIGHT, map);
+                map[curs_y][curs_x] = map[curs_y][curs_x] == '*' ? ' ' : '*';
+                printWorld(HEIGHT, WIDTH, map);
                 move(curs_y, curs_x);
                 break;
 
@@ -102,10 +101,10 @@ int main(int argv, char **argc)
 
     mvaddstr(HEIGHT, 0, "Press 'e' to end simulation, space to pause");
     mvaddstr(HEIGHT, 45, "Generation 0");
-    printWorld(WIDTH, HEIGHT, map);
+    printWorld(HEIGHT, WIDTH, map);
 
     generation = 1;
-    while (liveCheck(WIDTH, HEIGHT, map))
+    while (liveCheck(HEIGHT, WIDTH, map))
     {
         nanosleep(&wait_time, NULL);
         if ((ch = getch()) != ERR)
@@ -117,7 +116,7 @@ int main(int argv, char **argc)
 
                 case ' ':
                     /*TODO: instructions*/
-                    pauseSim(WIDTH, HEIGHT, map);
+                    pauseSim(HEIGHT, WIDTH, map);
                     break;
 
                 case 'r':
@@ -126,11 +125,11 @@ int main(int argv, char **argc)
             }
         }
 
-        iterGen(WIDTH, HEIGHT, map);
+        iterGen(HEIGHT, WIDTH, map);
         mvprintw(HEIGHT, 56, "%d", generation);
         /* x coordinate comes from the instruction string, but we don't want to
            have to import string.h just for strlen() */
-        printWorld(WIDTH, HEIGHT, map);
+        printWorld(HEIGHT, WIDTH, map);
         generation++;
     }
 
@@ -138,31 +137,31 @@ int main(int argv, char **argc)
 }
 
 /* Print a map onto the screen */
-void printWorld(int WIDTH, int HEIGHT, char map[WIDTH][HEIGHT])
+void printWorld(int HEIGHT, int WIDTH, char map[HEIGHT][WIDTH])
 {
     int i, j;
 
-    for (i = 0; i < WIDTH; i++)
+    for (i = 0; i < HEIGHT; i++)
     {
-        for (j = 0; j < HEIGHT; j++)
+        for (j = 0; j < WIDTH; j++)
         {
-            mvaddch(j, i, map[i][j]);
+            mvaddch(i, j, map[i][j]);
         }
     }
     refresh();
 }
 
 /* Iterate the map to the next generation */
-void iterGen(int WIDTH, int HEIGHT, char curMap[WIDTH][HEIGHT])
+void iterGen(int HEIGHT, int WIDTH, char curMap[HEIGHT][WIDTH])
 {
-    int i, j;
-    char tempMap[WIDTH][HEIGHT];
+    int i, j, neighbors;
+    char tempMap[HEIGHT][WIDTH];
 
-    for (i = 0; i < WIDTH; i++)
+    for (i = 0; i < HEIGHT; i++)
     {
-        for (j = 0; j < HEIGHT; j++)
+        for (j = 0; j < WIDTH; j++)
         {
-            int neighbors = 0;
+            neighbors = 0;
             neighbors += curMap[i+1][j+1] == '*' ? 1 : 0;
             neighbors += curMap[i+1][j] == '*' ? 1 : 0;
             neighbors += curMap[i+1][j-1] == '*' ? 1 : 0;
@@ -183,9 +182,9 @@ void iterGen(int WIDTH, int HEIGHT, char curMap[WIDTH][HEIGHT])
         }
     }
 
-    for (i = 0; i < WIDTH; i++)
+    for (i = 0; i < HEIGHT; i++)
     {
-        for (j = 0; j < HEIGHT; j++)
+        for (j = 0; j < WIDTH; j++)
         {
             curMap[i][j] = tempMap[i][j];
         }
@@ -193,13 +192,14 @@ void iterGen(int WIDTH, int HEIGHT, char curMap[WIDTH][HEIGHT])
 }
 
 /* Check if any cells are alive */
-int liveCheck(int WIDTH, int HEIGHT, char map[WIDTH][HEIGHT])
+/* TODO: check for stable state */
+int liveCheck(int HEIGHT, int WIDTH, char map[HEIGHT][WIDTH])
 {
     int i, j;
 
-    for (i = 0; i < WIDTH; i++)
+    for (i = 0; i < HEIGHT; i++)
     {
-        for (j = 0; j < HEIGHT; j++)
+        for (j = 0; j < WIDTH; j++)
         {
             if (map[i][j] == '*') {return 1;}
         }
@@ -216,27 +216,24 @@ void cleanup(void)
     endwin();
 }
 
-/* Sleep for nsecs nanoseconds. Portable replacement for POSIX function */
-/*TODO:void nanosleep(unsigned long int nsecs)*/
-
 /* Create a random starting generation */
-void genRandom(int WIDTH, int HEIGHT, char map[WIDTH][HEIGHT])
+void genRandom(int HEIGHT, int WIDTH, char map[HEIGHT][WIDTH])
 {
     int i, j;
 
-    for (i = 0; i < WIDTH; i++)
+    for (i = 0; i < HEIGHT; i++)
     {
-        for (j = 0; j < HEIGHT; j++)
+        for (j = 0; j < WIDTH; j++)
         {
             map[i][j] = rand() % 8 == 0 ? '*' : ' ';
         }
     }
 
-    printWorld(WIDTH, HEIGHT, map);
+    printWorld(HEIGHT, WIDTH, map);
 }
 
 /* Enter a pause state */
-void pauseSim(int WIDTH, int HEIGHT, char map[WIDTH][HEIGHT])
+void pauseSim(int HEIGHT, int WIDTH, char map[HEIGHT][WIDTH])
 {
     int ch;
 
@@ -245,7 +242,7 @@ void pauseSim(int WIDTH, int HEIGHT, char map[WIDTH][HEIGHT])
         switch (ch)
         {
             case 'd':
-                dumpMap(WIDTH, HEIGHT, map);
+                dumpMap(HEIGHT, WIDTH, map);
                 break;
 
             case 'e':
@@ -260,7 +257,7 @@ void pauseSim(int WIDTH, int HEIGHT, char map[WIDTH][HEIGHT])
 }
 
 /* Dump the current generation to a text file */
-int dumpMap(int WIDTH, int HEIGHT, char map[WIDTH][HEIGHT])
+int dumpMap(int HEIGHT, int WIDTH, char map[HEIGHT][WIDTH])
 {
     int i, j;
     FILE *dumpFile = fopen("dump.txt", "w");
@@ -274,7 +271,7 @@ int dumpMap(int WIDTH, int HEIGHT, char map[WIDTH][HEIGHT])
     {
         for (j = 0; j < WIDTH; j++)
         {
-            fputc(map[j][i], dumpFile);
+            fputc(map[i][j], dumpFile);
         }
         fputc('\n', dumpFile);
     }
