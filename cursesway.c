@@ -260,8 +260,8 @@ void pauseSim(int HEIGHT, int WIDTH, char map[HEIGHT][WIDTH])
 int dumpMap(int HEIGHT, int WIDTH, char map[HEIGHT][WIDTH])
 {
     int i, j;
-    FILE *dumpFile = fopen("dump.txt", "w");
-    if (dumpFile == NULL)
+    FILE *dump_file = fopen("dump.txt", "w");
+    if (dump_file == NULL)
     {
         fprintf(stderr, "Unable to create dump file.\n");
         return 1;
@@ -271,11 +271,11 @@ int dumpMap(int HEIGHT, int WIDTH, char map[HEIGHT][WIDTH])
     {
         for (j = 0; j < WIDTH; j++)
         {
-            fputc(map[i][j], dumpFile);
+            fputc(map[i][j], dump_file);
         }
-        fputc('\n', dumpFile);
+        fputc('\n', dump_file);
     }
 
-    fclose(dumpFile);
+    fclose(dump_file);
     return 0;
 }
