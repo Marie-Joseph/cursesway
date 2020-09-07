@@ -23,8 +23,13 @@ void genRandom(int HEIGHT, int WIDTH, char map[HEIGHT][WIDTH]);
 int dumpMap(int HEIGHT, int WIDTH, char map[HEIGHT][WIDTH]);
 void pauseSim(int HEIGHT, int WIDTH, char map[HEIGHT][WIDTH]);
 
+/* Easter egg */
+void goodbyeConway(int HEIGHT, int WIDTH, char map[HEIGHT][WIDTH]);
+
 int main(int argv, char **argc)
 {
+    /*freopen("errors.txt", "a", stderr);*/
+
     unsigned int ch, i, j, curs_x, curs_y, generation;
     /*unsigned int gen_time, rand_seed;*/
     struct timespec wait_time;
@@ -92,6 +97,10 @@ int main(int argv, char **argc)
 
             case 'd':
                 move(curs_y, ++curs_x);
+                break;
+                
+            case 'c':
+                goodbyeConway(HEIGHT, WIDTH, map);
                 break;
         }
         refresh();
@@ -163,12 +172,12 @@ void iterGen(int HEIGHT, int WIDTH, char curMap[HEIGHT][WIDTH])
         {
             neighbors = 0;
             neighbors += curMap[i+1][j+1] == '*' ? 1 : 0;
-            neighbors += curMap[i+1][j] == '*' ? 1 : 0;
+            neighbors += curMap[i+1][j]   == '*' ? 1 : 0;
             neighbors += curMap[i+1][j-1] == '*' ? 1 : 0;
-            neighbors += curMap[i][j+1] == '*' ? 1 : 0;
-            neighbors += curMap[i][j-1] == '*' ? 1 : 0;
+            neighbors += curMap[i][j+1]   == '*' ? 1 : 0;
+            neighbors += curMap[i][j-1]   == '*' ? 1 : 0;
             neighbors += curMap[i-1][j+1] == '*' ? 1 : 0;
-            neighbors += curMap[i-1][j] == '*' ? 1 : 0;
+            neighbors += curMap[i-1][j]   == '*' ? 1 : 0;
             neighbors += curMap[i-1][j-1] == '*' ? 1 : 0;
 
             if (curMap[i][j] == ' ')
@@ -278,4 +287,65 @@ int dumpMap(int HEIGHT, int WIDTH, char map[HEIGHT][WIDTH])
 
     fclose(dump_file);
     return 0;
+}
+
+/* A wave goodbye to Conway */
+/*
+                 ***
+                 * *
+                 * *
+                  *
+               * ***
+                * * *
+                  *  *
+                 * *
+                 * *
+
+
+
+
+
+           RIP John Conway
+       1937-12-26 - 2020-04-11
+*/
+void goodbyeConway(int HEIGHT, int WIDTH, char map[HEIGHT][WIDTH])
+{
+    int i, j;
+    int x_center = WIDTH / 2;
+    int y_center = HEIGHT / 2;
+    
+    for (i = 0; i < HEIGHT; i++)
+    {
+        for (j = 0; j < WIDTH; j++)
+        {
+            map[i][j] = ' ';
+        }
+    }
+    
+    map[y_center - 4][x_center - 1]     = '*';
+    map[y_center - 4][x_center]         = '*';
+    map[y_center - 4][x_center + 1]     = '*';
+    map[y_center - 3][x_center - 1]     = '*';
+    map[y_center - 3][x_center + 1]     = '*';
+    map[y_center - 2][x_center - 1]     = '*';
+    map[y_center - 2][x_center + 1]     = '*';
+    map[y_center - 1][x_center]         = '*';
+    map[y_center][x_center - 3]         = '*';
+    map[y_center][x_center - 1]         = '*';
+    map[y_center][x_center]             = '*';
+    map[y_center][x_center + 1]         = '*';
+    map[y_center + 1][x_center - 2]     = '*';
+    map[y_center + 1][x_center]         = '*';
+    map[y_center + 1][x_center + 2]     = '*';
+    map[y_center + 2][x_center]         = '*';
+    map[y_center + 2][x_center + 3]     = '*';
+    map[y_center + 3][x_center - 1]     = '*';
+    map[y_center + 3][x_center + 1]     = '*';
+    map[y_center + 4][x_center - 1]     = '*';
+    map[y_center + 4][x_center + 1]     = '*';
+    
+    printWorld(HEIGHT, WIDTH, map);
+    
+    mvaddstr(y_center + 6, x_center - 7, "RIP John Conway");
+    mvaddstr(y_center + 7, x_center - 13, "26 Dec. 1937 - 11 Apr. 2020");
 }

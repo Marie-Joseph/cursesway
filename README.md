@@ -12,7 +12,7 @@ Please note that if you exit the program with the common `ctrl+c`, your terminal
 
 ## Quirks
 
-The worldspace of Cursesway is not infinite, as a perfect implementation of Conway's Game of Life would require. Rather, [automata](https://en.wikipedia.org/wiki/Cellular_automaton) which would affect cells above or below the edge of the screen affect those in the same place relative to the opposite edge, while the right and left are hard borders. For example, if a [glider](https://en.wikipedia.org/wiki/Glider_(Conway%27s_Life)) would travel off the top of the screen, it will instead continue on from the bottom; but if it were to travel off the left of the screen, it would either die or freeze in its last stable state. I have no idea why this works the way it does.
+The worldspace of Cursesway is not infinite, as a perfect implementation of Conway's Game of Life would require. Rather, [automata](https://en.wikipedia.org/wiki/Cellular_automaton) which would affect cells to either side of the edge of the screen affect those in the same place relative to the opposite edge, while the top and bottom are hard borders. For example, if a [glider](https://en.wikipedia.org/wiki/Glider_(Conway%27s_Life)) would travel off the right of the screen, it will instead continue on from the left; but if it were to travel off the top of the screen, it would either die or freeze in its last stable state.
 
 Currently, the controls for the pause state are not shown to the user. This is due to an unknown issue with printing functions and should be fixed at some point.
 
@@ -22,8 +22,8 @@ Cursesway uses simple C that should be supported by any compiler more ambitious 
 
 ```
 sudo apt update
-sudo apt install build-essential libncurses5-dev
-gcc -lcurses -o cursesway cursesway.c
+sudo apt install build-essential libncurses-dev
+make cursesway
 ./cursesway
 ```
 
@@ -32,8 +32,8 @@ The following are future objectives. If you happen to feel like tackling any of 
 
 * better instructions/proper documentation
 * restart simulation (optionally w/ same seed or to initial screen)
-* imitate rollover functionality for right and left
-* pre-program some neat seeds/common constructs
+* imitate rollover functionality for all sides
+* pre-program some neat seeds/common constructs (one easter egg in place already)
 * allow loading in states (possibly from image formats)
 * allow dumping to an image format
 * support commandline arguments for things like:
