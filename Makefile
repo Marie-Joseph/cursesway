@@ -1,6 +1,6 @@
 all: cursesway
 
-cursesway: clean cursesway.c
+cursesway: cursesway.c
 	gcc -Wall -o cursesway -lcurses cursesway.c
 
 clean:

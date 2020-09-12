@@ -98,7 +98,7 @@ int main(int argv, char **argc)
             case 'd':
                 move(curs_y, ++curs_x);
                 break;
-                
+
             case 'c':
                 goodbyeConway(HEIGHT, WIDTH, map);
                 break;
