@@ -13,20 +13,24 @@
 #include <curses.h>
 
 /* Convenience functions */
-void printWorld(int HEIGHT, int WIDTH, char map[HEIGHT][WIDTH]);
-void iterGen(int HEIGHT, int WIDTH, char curMap[HEIGHT][WIDTH]);
-int liveCheck(int HEIGHT, int WIDTH, char map[HEIGHT][WIDTH]);
-void cleanup(void);
+void printWorld();
+void iterGen();
+int liveCheck();
+void cleanup();
 
 /* User commands */
-void genRandom(int HEIGHT, int WIDTH, char map[HEIGHT][WIDTH]);
-int dumpMap(int HEIGHT, int WIDTH, char map[HEIGHT][WIDTH]);
-void pauseSim(int HEIGHT, int WIDTH, char map[HEIGHT][WIDTH]);
+void genRandom();
+int dumpMap();
+void pauseSim();
 
 /* Easter egg */
-void goodbyeConway(int HEIGHT, int WIDTH, char map[HEIGHT][WIDTH]);
+void goodbyeConway();
 
-int main(int argv, char **argc)
+/* Global MAP and size */
+char **MAP;
+size_t HEIGHT, WIDTH;
+
+int main()
 {
     /*freopen("errors.txt", "a", stderr);*/
 
@@ -51,21 +55,21 @@ int main(int argv, char **argc)
     /* Setup for leaving curses */
     atexit(cleanup);
 
-    /* Setup worldmap */
-    register const unsigned int HEIGHT = LINES - 1;
-    register const unsigned int WIDTH = COLS - 1;
-    char map[HEIGHT][WIDTH];
-    for (i = 0; i < HEIGHT; i++)
-    {
-        for (j = 0; j < WIDTH; j++)
-        {
-            map[i][j] = ' ';
+    /* Setup worldMAP */
+    HEIGHT = LINES - 1;
+    WIDTH = COLS - 1;
+    MAP = (char**)calloc(HEIGHT, sizeof(char*));
+    for (i = 0; i < HEIGHT; i++) {
+        MAP[i] = (char*)calloc(WIDTH, sizeof(char));
+        for (j = 0; j < WIDTH; j++) {
+            MAP[i][j] = ' ';
         }
     }
-    mvaddstr(HEIGHT, 0, "Press 'r' to create a random generation and 'space' to start the simulation; alternatively, navigate with WASD and give 'life' to a cell (or remove it) with 'l'");
-    printWorld(HEIGHT, WIDTH, map);
 
-    /* Get user input on creating a map or generating a random one */
+    mvaddstr(HEIGHT, 0, "Press 'r' to create a random generation and 'space' to start the simulation; alternatively, navigate with WASD and give 'life' to a cell (or remove it) with 'l'");
+    printWorld();
+
+    /* Get user input on creating a MAP or generating a random one */
     curs_y = 0;
     curs_x = 0;
     move(curs_y, curs_x);
@@ -74,12 +78,12 @@ int main(int argv, char **argc)
         switch (ch)
         {
             case 'r':
-                genRandom(HEIGHT, WIDTH, map);
+                genRandom();
                 break;
 
             case 'l':
-                map[curs_y][curs_x] = map[curs_y][curs_x] == '*' ? ' ' : '*';
-                printWorld(HEIGHT, WIDTH, map);
+                MAP[curs_y][curs_x] = MAP[curs_y][curs_x] == '*' ? ' ' : '*';
+                printWorld();
                 move(curs_y, curs_x);
                 break;
 
@@ -100,7 +104,7 @@ int main(int argv, char **argc)
                 break;
 
             case 'c':
-                goodbyeConway(HEIGHT, WIDTH, map);
+                goodbyeConway();
                 break;
         }
         refresh();
@@ -110,10 +114,10 @@ int main(int argv, char **argc)
 
     mvaddstr(HEIGHT, 0, "Press 'e' to end simulation, space to pause");
     mvaddstr(HEIGHT, 45, "Generation 0");
-    printWorld(HEIGHT, WIDTH, map);
+    printWorld();
 
     generation = 1;
-    while (liveCheck(HEIGHT, WIDTH, map))
+    while (liveCheck())
     {
         nanosleep(&wait_time, NULL);
         if ((ch = getch()) != ERR)
@@ -125,7 +129,7 @@ int main(int argv, char **argc)
 
                 case ' ':
                     /*TODO: instructions*/
-                    pauseSim(HEIGHT, WIDTH, map);
+                    pauseSim();
                     break;
 
                 case 'r':
@@ -134,19 +138,19 @@ int main(int argv, char **argc)
             }
         }
 
-        iterGen(HEIGHT, WIDTH, map);
+        iterGen();
         mvprintw(HEIGHT, 56, "%d", generation);
         /* x coordinate comes from the instruction string, but we don't want to
            have to import string.h just for strlen() */
-        printWorld(HEIGHT, WIDTH, map);
+        printWorld();
         generation++;
     }
 
     exit(0);
 }
 
-/* Print a map onto the screen */
-void printWorld(int HEIGHT, int WIDTH, char map[HEIGHT][WIDTH])
+/* Print a MAP onto the screen */
+void printWorld()
 {
     int i, j;
 
@@ -154,37 +158,57 @@ void printWorld(int HEIGHT, int WIDTH, char map[HEIGHT][WIDTH])
     {
         for (j = 0; j < WIDTH; j++)
         {
-            mvaddch(i, j, map[i][j]);
+            mvaddch(i, j, MAP[i][j]);
         }
     }
     refresh();
 }
 
-/* Iterate the map to the next generation */
-void iterGen(int HEIGHT, int WIDTH, char curMap[HEIGHT][WIDTH])
+/* Iterate the MAP to the next generation */
+void iterGen()
 {
     int i, j, neighbors;
-    char tempMap[HEIGHT][WIDTH];
+    char **tempMap = (char **)calloc(HEIGHT, sizeof(char*));
+    for (i = 0; i < HEIGHT; i++)
+        tempMap[i] = (char *)calloc(WIDTH, sizeof(char));
 
     for (i = 0; i < HEIGHT; i++)
     {
         for (j = 0; j < WIDTH; j++)
         {
             neighbors = 0;
-            neighbors += curMap[i+1][j+1] == '*' ? 1 : 0;
-            neighbors += curMap[i+1][j]   == '*' ? 1 : 0;
-            neighbors += curMap[i+1][j-1] == '*' ? 1 : 0;
-            neighbors += curMap[i][j+1]   == '*' ? 1 : 0;
-            neighbors += curMap[i][j-1]   == '*' ? 1 : 0;
-            neighbors += curMap[i-1][j+1] == '*' ? 1 : 0;
-            neighbors += curMap[i-1][j]   == '*' ? 1 : 0;
-            neighbors += curMap[i-1][j-1] == '*' ? 1 : 0;
+           
+           if (i < HEIGHT-1) {
+                neighbors += MAP[i+1][j]   == '*' ? 1 : 0; 
+ 
+                if (j < WIDTH-1)
+                    neighbors += MAP[i+1][j+1] == '*' ? 1 : 0;
+                
+                if (j > 0)
+                    neighbors += MAP[i+1][j-1] == '*' ? 1 : 0;
+            }
+            
+            if (j < WIDTH-1)
+                neighbors += MAP[i][j+1]   == '*' ? 1 : 0;
+            
+            if (j > 0)
+                neighbors += MAP[i][j-1]   == '*' ? 1 : 0;
+            
+            if (i > 0) {
+                neighbors += MAP[i-1][j]   == '*' ? 1 : 0;
 
-            if (curMap[i][j] == ' ')
+                if (j > 0)
+                    neighbors += MAP[i-1][j-1] == '*' ? 1 : 0;
+
+                if (j < WIDTH-1)
+                    neighbors += MAP[i-1][j+1] == '*' ? 1 : 0;
+            }
+
+            if (MAP[i][j] == ' ')
             {
                 tempMap[i][j] = neighbors == 3 ? '*' : ' ';
             }
-            else if (curMap[i][j] == '*')
+            else if (MAP[i][j] == '*')
             {
                 tempMap[i][j] = neighbors < 2 || neighbors > 3 ? ' ' : '*';
             }
@@ -195,14 +219,19 @@ void iterGen(int HEIGHT, int WIDTH, char curMap[HEIGHT][WIDTH])
     {
         for (j = 0; j < WIDTH; j++)
         {
-            curMap[i][j] = tempMap[i][j];
+            MAP[i][j] = tempMap[i][j];
         }
     }
+
+    for (i = 0; i < HEIGHT; i++)
+        free(tempMap[i]);
+    
+    free(tempMap);
 }
 
 /* Check if any cells are alive */
 /* TODO: check for stable state */
-int liveCheck(int HEIGHT, int WIDTH, char map[HEIGHT][WIDTH])
+int liveCheck()
 {
     int i, j;
 
@@ -210,15 +239,20 @@ int liveCheck(int HEIGHT, int WIDTH, char map[HEIGHT][WIDTH])
     {
         for (j = 0; j < WIDTH; j++)
         {
-            if (map[i][j] == '*') {return 1;}
+            if (MAP[i][j] == '*') {return 1;}
         }
     }
     return 0;
 }
 
 /* Return the terminal to normal functionality */
-void cleanup(void)
+void cleanup()
 {
+    int i;
+    for (i = 0; i < HEIGHT; i++) {
+        free(MAP[i]);
+    }
+    free(MAP);
     nodelay(stdscr, TRUE);
     echo();
     nocbreak();
@@ -226,7 +260,7 @@ void cleanup(void)
 }
 
 /* Create a random starting generation */
-void genRandom(int HEIGHT, int WIDTH, char map[HEIGHT][WIDTH])
+void genRandom()
 {
     int i, j;
 
@@ -234,15 +268,15 @@ void genRandom(int HEIGHT, int WIDTH, char map[HEIGHT][WIDTH])
     {
         for (j = 0; j < WIDTH; j++)
         {
-            map[i][j] = rand() % 8 == 0 ? '*' : ' ';
+            MAP[i][j] = rand() % 8 == 0 ? '*' : ' ';
         }
     }
 
-    printWorld(HEIGHT, WIDTH, map);
+    printWorld();
 }
 
 /* Enter a pause state */
-void pauseSim(int HEIGHT, int WIDTH, char map[HEIGHT][WIDTH])
+void pauseSim()
 {
     int ch;
 
@@ -251,7 +285,7 @@ void pauseSim(int HEIGHT, int WIDTH, char map[HEIGHT][WIDTH])
         switch (ch)
         {
             case 'd':
-                dumpMap(HEIGHT, WIDTH, map);
+                dumpMap();
                 break;
 
             case 'e':
@@ -266,7 +300,7 @@ void pauseSim(int HEIGHT, int WIDTH, char map[HEIGHT][WIDTH])
 }
 
 /* Dump the current generation to a text file */
-int dumpMap(int HEIGHT, int WIDTH, char map[HEIGHT][WIDTH])
+int dumpMap()
 {
     int i, j;
     FILE *dump_file = fopen("dump.txt", "w");
@@ -280,7 +314,7 @@ int dumpMap(int HEIGHT, int WIDTH, char map[HEIGHT][WIDTH])
     {
         for (j = 0; j < WIDTH; j++)
         {
-            fputc(map[i][j], dump_file);
+            fputc(MAP[i][j], dump_file);
         }
         fputc('\n', dump_file);
     }
@@ -308,7 +342,7 @@ int dumpMap(int HEIGHT, int WIDTH, char map[HEIGHT][WIDTH])
            RIP John Conway
        1937-12-26 - 2020-04-11
 */
-void goodbyeConway(int HEIGHT, int WIDTH, char map[HEIGHT][WIDTH])
+void goodbyeConway()
 {
     int i, j;
     int x_center = WIDTH / 2;
@@ -318,33 +352,33 @@ void goodbyeConway(int HEIGHT, int WIDTH, char map[HEIGHT][WIDTH])
     {
         for (j = 0; j < WIDTH; j++)
         {
-            map[i][j] = ' ';
+            MAP[i][j] = ' ';
         }
     }
     
-    map[y_center - 4][x_center - 1]     = '*';
-    map[y_center - 4][x_center]         = '*';
-    map[y_center - 4][x_center + 1]     = '*';
-    map[y_center - 3][x_center - 1]     = '*';
-    map[y_center - 3][x_center + 1]     = '*';
-    map[y_center - 2][x_center - 1]     = '*';
-    map[y_center - 2][x_center + 1]     = '*';
-    map[y_center - 1][x_center]         = '*';
-    map[y_center][x_center - 3]         = '*';
-    map[y_center][x_center - 1]         = '*';
-    map[y_center][x_center]             = '*';
-    map[y_center][x_center + 1]         = '*';
-    map[y_center + 1][x_center - 2]     = '*';
-    map[y_center + 1][x_center]         = '*';
-    map[y_center + 1][x_center + 2]     = '*';
-    map[y_center + 2][x_center]         = '*';
-    map[y_center + 2][x_center + 3]     = '*';
-    map[y_center + 3][x_center - 1]     = '*';
-    map[y_center + 3][x_center + 1]     = '*';
-    map[y_center + 4][x_center - 1]     = '*';
-    map[y_center + 4][x_center + 1]     = '*';
+    MAP[y_center - 4][x_center - 1]     = '*';
+    MAP[y_center - 4][x_center]         = '*';
+    MAP[y_center - 4][x_center + 1]     = '*';
+    MAP[y_center - 3][x_center - 1]     = '*';
+    MAP[y_center - 3][x_center + 1]     = '*';
+    MAP[y_center - 2][x_center - 1]     = '*';
+    MAP[y_center - 2][x_center + 1]     = '*';
+    MAP[y_center - 1][x_center]         = '*';
+    MAP[y_center][x_center - 3]         = '*';
+    MAP[y_center][x_center - 1]         = '*';
+    MAP[y_center][x_center]             = '*';
+    MAP[y_center][x_center + 1]         = '*';
+    MAP[y_center + 1][x_center - 2]     = '*';
+    MAP[y_center + 1][x_center]         = '*';
+    MAP[y_center + 1][x_center + 2]     = '*';
+    MAP[y_center + 2][x_center]         = '*';
+    MAP[y_center + 2][x_center + 3]     = '*';
+    MAP[y_center + 3][x_center - 1]     = '*';
+    MAP[y_center + 3][x_center + 1]     = '*';
+    MAP[y_center + 4][x_center - 1]     = '*';
+    MAP[y_center + 4][x_center + 1]     = '*';
     
-    printWorld(HEIGHT, WIDTH, map);
+    printWorld();
     
     mvaddstr(y_center + 6, x_center - 7, "RIP John Conway");
     mvaddstr(y_center + 7, x_center - 13, "26 Dec. 1937 - 11 Apr. 2020");
