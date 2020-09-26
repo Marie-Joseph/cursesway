@@ -12,33 +12,38 @@ Please note that if you exit the program with the common `ctrl+c`, your terminal
 
 ## Quirks
 
-The worldspace of Cursesway is not infinite, as a perfect implementation of Conway's Game of Life would require. Rather, [automata](https://en.wikipedia.org/wiki/Cellular_automaton) which would affect cells to either side of the edge of the screen affect those in the same place relative to the opposite edge, while the top and bottom are hard borders. For example, if a [glider](https://en.wikipedia.org/wiki/Glider_(Conway%27s_Life)) would travel off the right of the screen, it will instead continue on from the left; but if it were to travel off the top of the screen, it would either die or freeze in its last stable state.
+The worldspace of Cursesway is not infinite, as a perfect implementation of Conway's Game of Life would require. Rather, [automata](https://en.wikipedia.org/wiki/Cellular_automaton) are bounded by the screen. Note that all space provided by your terminal is used, and this size is set at launch. In the future, users may be able to specify the size of the worldspace, even beyond the edges of their terminal. Either way, the ultimate functionality will allow automata to "rollover" the edges of the screen.
 
 Currently, the controls for the pause state are not shown to the user. This is due to an unknown issue with printing functions and should be fixed at some point.
 
 ## Compilation
 
-Cursesway uses simple C that should be supported by any compiler more ambitious than tcc. Assuming you're running a Unix-like-enough operating system and have a basic development environment, all you'll need is development files for ncurses. As an example setup on a Debian-based Linux distribution, `cd` to the directory where you've stored the sourcefile and run:
+Cursesway uses simple C that should be supported by any compiler more ambitious than tcc. Just insure you have a POSIX-friendly C compiler (`clang` is the primary development compiler), a relatively standard `make`, and development files for (n)curses. For example, on a Debian-based Linux distribution (Debian, Ubuntu, Mint, elementary, BunsenLabs...), run:
 
 ```
 sudo apt update
-sudo apt install build-essential libncurses-dev
+sudo apt install git build-essential libncurses-dev
+```
+
+Change the package management commands as needed for your operating system and/or taste.
+
+Once you have the basic tools, the compilation itself is identical across systems:
+
+```
+git clone https://github.com/Marie-Joseph/cursesway.git
+cd cursesway
 make cursesway
 ./cursesway
 ```
 
-## TODO
-The following are future objectives. If you happen to feel like tackling any of them, feel free to do so and open a PR explaining what you've implemented.
+## Supported platforms
+Cursesway should run on any Unix-like operating system with ncurses (and others with some minor changes!), and has been tested on Fedora 32; Debian Stretch, Buster, Bullseye (testing), and Sid (unstable); Ubuntu 18.04, 19.10, and 20.04; elementary OS Juno; and FreeBSD 12.1. If you've compiled it on other systems - or encounter problems on other systems - I'd love to know!
 
-* better instructions/proper documentation
-* restart simulation (optionally w/ same seed or to initial screen)
-* imitate rollover functionality for all sides
-* pre-program some neat seeds/common constructs (one easter egg in place already)
-* allow loading in states (possibly from image formats)
-* allow dumping to an image format
-* support commandline arguments for things like:
-    * generation length (currently ~1/10 second)
-    * dumpfile format
-    * premade seeds
-    * "alive" cell character
-* clean up the implementation and ideally use pure C99
+## Bugs Beyond Scope
+These known bugs exist outside of the scope of this project. They may be resolved as a side-effect, but they will not be directly targeted so long as workarounds exist.
+
+* `gcc` 10 fails to link ncurses on Debian Bullseye (testing)
+    * earlier versions of `gcc` seem to work fine
+    * use `clang` if you want a newer C compiler
+        * run `sudo update-alternatives --config cc` and select `clang` OR
+        * change the makefile from using `cc` to using `clang`
