@@ -14,7 +14,7 @@
 
 /* Convenience functions */
 void printWorld();
-void iterGen();
+void iterGen(char **tempMap);
 int liveCheck();
 void cleanup();
 
@@ -35,6 +35,7 @@ int main()
     /*freopen("errors.txt", "a", stderr);*/
 
     unsigned int ch, i, j, curs_x, curs_y, generation;
+    char **tempMap;
     /*unsigned int gen_time, rand_seed;*/
     struct timespec wait_time;
 
@@ -59,8 +60,10 @@ int main()
     HEIGHT = LINES - 1;
     WIDTH = COLS - 1;
     MAP = (char**)calloc(HEIGHT, sizeof(char*));
+    tempMap = (char **)calloc(HEIGHT, sizeof(char*));
     for (i = 0; i < HEIGHT; i++) {
         MAP[i] = (char*)calloc(WIDTH, sizeof(char));
+        tempMap[i] = (char *)calloc(WIDTH, sizeof(char));
         for (j = 0; j < WIDTH; j++) {
             MAP[i][j] = ' ';
         }
@@ -138,7 +141,7 @@ int main()
             }
         }
 
-        iterGen();
+        iterGen(tempMap);
         mvprintw(HEIGHT, 56, "%d", generation);
         /* x coordinate comes from the instruction string, but we don't want to
            have to import string.h just for strlen() */
@@ -165,12 +168,9 @@ void printWorld()
 }
 
 /* Iterate the MAP to the next generation */
-void iterGen()
+void iterGen(char **tempMap)
 {
     int i, j, neighbors;
-    char **tempMap = (char **)calloc(HEIGHT, sizeof(char*));
-    for (i = 0; i < HEIGHT; i++)
-        tempMap[i] = (char *)calloc(WIDTH, sizeof(char));
 
     for (i = 0; i < HEIGHT; i++)
     {
@@ -222,11 +222,6 @@ void iterGen()
             MAP[i][j] = tempMap[i][j];
         }
     }
-
-    for (i = 0; i < HEIGHT; i++)
-        free(tempMap[i]);
-    
-    free(tempMap);
 }
 
 /* Check if any cells are alive */
@@ -248,11 +243,6 @@ int liveCheck()
 /* Return the terminal to normal functionality */
 void cleanup()
 {
-    int i;
-    for (i = 0; i < HEIGHT; i++) {
-        free(MAP[i]);
-    }
-    free(MAP);
     nodelay(stdscr, TRUE);
     echo();
     nocbreak();
